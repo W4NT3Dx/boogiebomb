@@ -1,0 +1,11 @@
+local TweenService = game:GetService("TweenService")
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+local forward = root.CFrame.LookVector * 100
+local goal = {CFrame = root.CFrame + forward}
+
+local tween = TweenService:Create(root, TweenInfo.new(0.5), goal)
+tween:Play()
