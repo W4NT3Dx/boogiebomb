@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
@@ -16,93 +15,62 @@ local function getRoot()
 	return getChar():WaitForChild("HumanoidRootPart")
 end
 
+local function getHum()
+	return getChar():WaitForChild("Humanoid")
+end
+
 local function isSeated()
-	local hum = getChar():FindFirstChildOfClass("Humanoid")
-	return hum and hum.SeatPart ~= nil
+	local hum = getHum()
+	return hum.SeatPart ~= nil
 end
 
 -------------------------------------------------
--- NORMAL TP (ANTI RUBBERBAND)
+-- SAFE PLAYER TELEPORT
 -------------------------------------------------
 
-local function tweenStep(direction, distance)
+local function safeTP(position)
 
+	local char = getChar()
 	local root = getRoot()
+	local hum = getHum()
 
-	local goal = {
-		CFrame = root.CFrame + (direction * distance)
-	}
+	local oldWalk = hum.WalkSpeed
+	local oldJump = hum.JumpPower
 
-	local tween = TweenService:Create(
-		root,
-		TweenInfo.new(0.15, Enum.EasingStyle.Linear),
-		goal
-	)
+	-- freeze movement
+	hum.WalkSpeed = 0
+	hum.JumpPower = 0
 
-	tween:Play()
-	tween.Completed:Wait()
+	root.Anchored = true
 
-end
+	root.CFrame = CFrame.new(position + Vector3.new(0,3,0))
 
+	task.wait()
 
-local function smoothTP(target)
+	root.Anchored = false
 
-	local root = getRoot()
-
-	while (root.Position - target).Magnitude > 15 do
-
-		local direction = (target - root.Position).Unit
-
-		root.CFrame = CFrame.lookAt(root.Position, target)
-
-		tweenStep(direction, 60)
-
-		task.wait()
-
-	end
+	-- restore movement
+	hum.WalkSpeed = oldWalk
+	hum.JumpPower = oldJump
 
 end
 
 -------------------------------------------------
--- CAR TP
+-- CAR TELEPORT
 -------------------------------------------------
 
-local function carStep(direction, distance)
+local function carTP(position)
 
 	local vehicleId = player:GetAttribute("spawnedVehicleid")
-	local car = workspace.Vehicles:FindFirstChild(vehicleId)
+	if not vehicleId then return end
 
+	local car = workspace.Vehicles:FindFirstChild(vehicleId)
 	if not car then return end
 
 	local root = car.PrimaryPart or car:FindFirstChildWhichIsA("BasePart")
+	if not root then return end
 
-	if root then
-		car:PivotTo(car:GetPivot() + (direction * distance))
-	end
-
-end
-
-
-local function smoothCarTP(target)
-
-	local vehicleId = player:GetAttribute("spawnedVehicleid")
-	local car = workspace.Vehicles:FindFirstChild(vehicleId)
-
-	if not car then return end
-
-	local root = car.PrimaryPart or car:FindFirstChildWhichIsA("BasePart")
-
-	while (root.Position - target).Magnitude > 20 do
-
-		local direction = (target - root.Position).Unit
-
-		car:PivotTo(CFrame.lookAt(root.Position, target))
-
-		carStep(direction, 80)
-
-		RunService.Heartbeat:Wait()
-
-	end
+	car:PivotTo(CFrame.new(position + Vector3.new(0,5,0)))
 
 end
 
@@ -111,7 +79,10 @@ end
 -------------------------------------------------
 
 local function getWaypoint()
-	return workspace.Local.MapWaypoint.Position
+
+	local wp = workspace.Local.MapWaypoint
+	return wp.Position
+
 end
 
 -------------------------------------------------
@@ -122,14 +93,13 @@ local gui = Instance.new("ScreenGui")
 gui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0,250,0,350)
-frame.Position = UDim2.new(0,80,0,120)
+frame.Size = UDim2.new(0,260,0,360)
+frame.Position = UDim2.new(0,100,0,120)
 frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 frame.Parent = gui
 
-
 -------------------------------------------------
--- TP WAYPOINT
+-- WAYPOINT TP
 -------------------------------------------------
 
 local tpWaypoint = Instance.new("TextButton")
@@ -139,12 +109,12 @@ tpWaypoint.Parent = frame
 
 tpWaypoint.MouseButton1Click:Connect(function()
 
-	smoothTP(getWaypoint())
+	safeTP(getWaypoint())
 
 end)
 
 -------------------------------------------------
--- TP WAYPOINT CAR
+-- CAR WAYPOINT TP
 -------------------------------------------------
 
 local tpCar = Instance.new("TextButton")
@@ -155,7 +125,7 @@ tpCar.Parent = frame
 
 tpCar.MouseButton1Click:Connect(function()
 
-	smoothCarTP(getWaypoint())
+	carTP(getWaypoint())
 
 end)
 
@@ -172,6 +142,9 @@ scroll.Parent = frame
 local layout = Instance.new("UIListLayout")
 layout.Parent = scroll
 
+-------------------------------------------------
+-- PLAYER BUTTONS
+-------------------------------------------------
 
 local function createPlayerButton(plr)
 
@@ -185,19 +158,17 @@ local function createPlayerButton(plr)
 	btn.MouseButton1Click:Connect(function()
 
 		local pos = plr:GetAttribute("position")
-
 		if not pos then return end
 
 		if isSeated() then
-			smoothCarTP(pos)
+			carTP(pos)
 		else
-			smoothTP(pos)
+			safeTP(pos)
 		end
 
 	end)
 
 end
-
 
 for _,plr in pairs(Players:GetPlayers()) do
 	createPlayerButton(plr)
