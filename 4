@@ -1,0 +1,94 @@
+1️⃣ Tween Teleport (Smooth Move – Most Reliable)
+
+Instead of instantly teleporting, you slide there really fast so the server accepts it.
+
+local TweenService = game:GetService("TweenService")
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+local target = Vector3.new(5000, 50, 5000) -- where you want to go
+
+local distance = (root.Position - target).Magnitude
+local speed = 300 -- studs per second
+local time = distance / speed
+
+local tween = TweenService:Create(
+    root,
+    TweenInfo.new(time, Enum.EasingStyle.Linear),
+    {CFrame = CFrame.new(target)}
+)
+
+tween:Play()
+
+✅ Harder for the server to detect
+✅ Works for long distance
+❌ Slower than instant TP
+
+2️⃣ Step Teleport (Jump in Small Steps)
+
+Move in small chunks repeatedly instead of one giant teleport.
+
+local player = game.Players.LocalPlayer
+local char = player.Character
+local root = char:WaitForChild("HumanoidRootPart")
+
+local target = Vector3.new(5000,50,5000)
+
+while (root.Position - target).Magnitude > 10 do
+    root.CFrame = root.CFrame + (target - root.Position).Unit * 80
+    task.wait()
+end
+
+root.CFrame = CFrame.new(target)
+
+✅ Bypasses many anti-teleports
+✅ Works farther than normal TP
+
+3️⃣ Velocity Launch Method
+
+Instead of teleporting, shoot yourself there physically.
+
+local player = game.Players.LocalPlayer
+local char = player.Character
+local root = char:WaitForChild("HumanoidRootPart")
+
+local target = Vector3.new(5000,50,5000)
+
+local velocity = Instance.new("BodyVelocity")
+velocity.MaxForce = Vector3.new(1e9,1e9,1e9)
+velocity.Velocity = (target - root.Position).Unit * 500
+velocity.Parent = root
+
+task.wait(2)
+
+velocity:Destroy()
+
+✅ Server sees real movement
+✅ Good bypass sometimes
+
+4️⃣ Seat / Vehicle Teleport (Very Powerful)
+
+If you sit in a seat, the server often trusts the seat’s position more.
+
+local vehicle = workspace.Vehicles:FindFirstChild(game.Players.LocalPlayer:GetAttribute("spawnedVehicleid"))
+
+if vehicle then
+    vehicle:PivotTo(CFrame.new(5000,50,5000))
+end
+
+✅ Often bypasses rubber-band
+✅ Best for cars
+
+5️⃣ Network Ownership Method (Advanced)
+
+If you own physics for a part, you can move it easier.
+
+local player = game.Players.LocalPlayer
+local char = player.Character
+local root = char:WaitForChild("HumanoidRootPart")
+
+root:SetNetworkOwner(player)
+
+root.CFrame = CFrame.new(5000,50,5000)
