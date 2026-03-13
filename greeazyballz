@@ -1,0 +1,120 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+local function getChar()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+local function getRoot()
+    return getChar():WaitForChild("HumanoidRootPart")
+end
+
+local function isSeated()
+    local char = getChar()
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    return humanoid and humanoid.SeatPart
+end
+
+-- NORMAL TP
+local function normalTP(pos)
+    local root = getRoot()
+    local goal = {CFrame = CFrame.new(pos)}
+    local tween = TweenService:Create(root, TweenInfo.new(0.5), goal)
+    tween:Play()
+end
+
+-- CAR TP
+local function carTP(pos)
+    local vehicleId = player:GetAttribute("spawnedVehicleid")
+    local car = workspace.Vehicles:FindFirstChild(vehicleId)
+
+    if car then
+        car:PivotTo(CFrame.new(pos))
+    end
+end
+
+-- WAYPOINT POSITION
+local function getWaypoint()
+    local wp = workspace.Local.MapWaypoint
+    return wp.Position
+end
+
+
+------------------------------------------------
+-- GUI
+------------------------------------------------
+
+local gui = Instance.new("ScreenGui", game.CoreGui)
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,250,0,350)
+frame.Position = UDim2.new(0,50,0,100)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+------------------------------------------------
+-- TP WAYPOINT BUTTON
+------------------------------------------------
+
+local tpWaypoint = Instance.new("TextButton", frame)
+tpWaypoint.Size = UDim2.new(1,0,0,40)
+tpWaypoint.Text = "TP Waypoint"
+
+tpWaypoint.MouseButton1Click:Connect(function()
+    normalTP(getWaypoint())
+end)
+
+------------------------------------------------
+-- TP WAYPOINT CAR
+------------------------------------------------
+
+local tpCar = Instance.new("TextButton", frame)
+tpCar.Position = UDim2.new(0,0,0,45)
+tpCar.Size = UDim2.new(1,0,0,40)
+tpCar.Text = "TP Waypoint Car"
+
+tpCar.MouseButton1Click:Connect(function()
+    carTP(getWaypoint())
+end)
+
+------------------------------------------------
+-- PLAYER LIST
+------------------------------------------------
+
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Position = UDim2.new(0,0,0,90)
+scroll.Size = UDim2.new(1,0,1,-90)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+
+local layout = Instance.new("UIListLayout", scroll)
+
+local function createPlayerButton(plr)
+
+    if plr == player then return end
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,0,0,35)
+    btn.Text = plr.Name
+    btn.Parent = scroll
+
+    btn.MouseButton1Click:Connect(function()
+
+        local pos = plr:GetAttribute("position")
+
+        if not pos then return end
+
+        if isSeated() then
+            carTP(pos)
+        else
+            normalTP(pos)
+        end
+
+    end)
+end
+
+for _,plr in pairs(Players:GetPlayers()) do
+    createPlayerButton(plr)
+end
+
+Players.PlayerAdded:Connect(createPlayerButton)
