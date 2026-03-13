@@ -9,3 +9,83 @@ local goal = {CFrame = root.CFrame + forward}
 
 local tween = TweenService:Create(root, TweenInfo.new(0.5), goal)
 tween:Play()
+
+
+--------------
+Method 1 — PivotTo (Best + Most Stable)
+
+This moves the entire vehicle model cleanly. Usually the best method.
+
+local player = game.Players.LocalPlayer
+local vehicleId = player:GetAttribute("spawnedVehicleid")
+
+local car = workspace.Vehicles:FindFirstChild(vehicleId)
+
+if car then
+	local root = car.PrimaryPart or car:FindFirstChildWhichIsA("BasePart")
+	if root then
+		local forward = root.CFrame.LookVector * 50
+		car:PivotTo(car:GetPivot() + forward)
+	end
+end
+
+✅ works with most cars
+✅ moves the full vehicle
+✅ low lag
+
+Method 2 — MoveTo (Simple Teleport)
+
+Very simple and sometimes bypasses weird physics.
+
+local player = game.Players.LocalPlayer
+local vehicleId = player:GetAttribute("spawnedVehicleid")
+
+local car = workspace.Vehicles:FindFirstChild(vehicleId)
+
+if car then
+	local root = car.PrimaryPart or car:FindFirstChildWhichIsA("BasePart")
+	if root then
+		local pos = root.Position + root.CFrame.LookVector * 50
+		car:MoveTo(pos)
+	end
+end
+
+✅ super simple
+⚠ sometimes rotates the car weird
+
+Method 3 — Velocity Boost (Fast Dash)
+
+Instead of teleporting it launches the car forward.
+
+local player = game.Players.LocalPlayer
+local vehicleId = player:GetAttribute("spawnedVehicleid")
+
+local car = workspace.Vehicles:FindFirstChild(vehicleId)
+
+if car then
+	local root = car.PrimaryPart or car:FindFirstChildWhichIsA("BasePart")
+	if root then
+		root.AssemblyLinearVelocity = root.CFrame.LookVector * 200
+	end
+end
+
+🚗 makes the car dash forward
+
+Method 4 — Direct CFrame Teleport (Instant)
+
+Most brute-force method.
+
+local player = game.Players.LocalPlayer
+local vehicleId = player:GetAttribute("spawnedVehicleid")
+
+local car = workspace.Vehicles:FindFirstChild(vehicleId)
+
+if car then
+	local root = car.PrimaryPart or car:FindFirstChildWhichIsA("BasePart")
+	if root then
+		root.CFrame = root.CFrame + root.CFrame.LookVector * 50
+	end
+end
+
+⚡ instant teleport
+⚠ can fight physics sometimes
